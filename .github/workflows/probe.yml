@@ -1,0 +1,18 @@
+name: probe
+on: workflow_dispatch
+jobs:
+  p:
+    runs-on: ubuntu-latest
+    steps:
+      - name: probe
+        run: |
+          echo "=== runner ip ==="
+          curl -s --max-time 10 https://api.ipify.org; echo
+          echo "=== trace ==="
+          curl -s --max-time 15 https://opencode.ai/cdn-cgi/trace | head -12
+          echo "=== models ==="
+          curl -s --max-time 20 -o /tmp/m.json -w 'models_code=%{http_code}\n' https://opencode.ai/inference/v1/models
+          echo "=== deepseek free ==="
+          curl -s --max-time 45 -o /tmp/i.json -D /tmp/i.h -w 'code=%{http_code}\n' -H 'content-type: application/json' -H 'x-opencode-client: cli' -H 'x-opencode-session: ses_gha1' -H 'x-opencode-request: msg_gha1' -H 'user-agent: opencode/latest/2.0.0/cli' -X POST https://opencode.ai/inference/v1/chat/completions -d '{"model":"deepseek-v4.1-flash-free","messages":[{"role":"user","content":"say OK"}],"stream":false,"max_tokens":16}'
+          head -c 300 /tmp/i.json; echo
+          grep -iE 'retry-after|cf-ray|cf-placement' /tmp/i.h || true
